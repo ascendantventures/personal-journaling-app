@@ -1,0 +1,112 @@
+:root {
+  --primary: #C2785C;
+  --primary-dark: #A8624A;
+  --primary-hover: #D4896D;
+  --secondary: #8A7355;
+  --bg-primary: #FAF8F5;
+  --bg-surface: #FFFFFF;
+  --bg-surface-alt: #F5F2EE;
+  --text-primary: #2C2C2C;
+  --text-secondary: #5C5C5C;
+  --text-muted: #8A8A8A;
+  --border: #E8E4DF;
+  --success: #4CAF50;
+  --warning: #F2994A;
+  --error: #EB5757;
+  --sidebar-width: 320px;
+  --shadow-1: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-2: 0 4px 12px rgba(0,0,0,0.10);
+  --shadow-3: 0 8px 24px rgba(0,0,0,0.15);
+  --focus-ring: 0 0 0 3px rgba(194, 120, 92, 0.25);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 16px;
+}
+
+.dark {
+  --primary: #C2785C;
+  --primary-dark: #D4896D;
+  --primary-hover: #E09A80;
+  --secondary: #A89B8C;
+  --bg-primary: #1A1A1A;
+  --bg-surface: #242424;
+  --bg-surface-alt: #2E2E2E;
+  --text-primary: #F0EDE8;
+  --text-secondary: #B8B4AE;
+  --text-muted: #7A7A7A;
+  --border: #3D3D3D;
+  --success: #6FCF97;
+  --warning: #F2994A;
+  --error: #EB5757;
+  --shadow-1: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-2: 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-3: 0 8px 24px rgba(0,0,0,0.5);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background 200ms ease, color 200ms ease;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+button {
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+}
+
+input, textarea {
+  font-family: 'DM Sans', sans-serif;
+}
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes modalEnter {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes toastEnter {
+  from { opacity: 0; transform: translateY(100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes staggerFade {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
