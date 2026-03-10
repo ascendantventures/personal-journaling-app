@@ -1,88 +1,69 @@
 import type { JournalEntry, UserPreferences } from '../types';
+import { supabase } from './supabase';
 
-// window.storage type augmentation
-declare global {
-  interface Window {
-    storage?: {
-      set(key: string, value: string): Promise<void>;
-      get(key: string): Promise<{ value: string } | null>;
-      list(prefix: string): Promise<{ keys: string[] }>;
-      delete(key: string): Promise<void>;
-    };
-  }
+const PREFERENCES_KEY = 'journal_preferences';
+
+// ─── Supabase CRUD for journal_entries ───────────────────────────────────────
+
+export async function saveEntry(entry: JournalEntry, userId: string): Promise<void> {
+  const { error } = await supabase
+    .from('journal_entries')
+    .upsert(
+      {
+        id: entry.id,
+        user_id: userId,
+        title: entry.title,
+        body: entry.body,
+        mood: entry.mood,
+        created_at: entry.createdAt,
+        updated_at: entry.updatedAt,
+      },
+      { onConflict: 'id' },
+    );
+  if (error) throw error;
 }
 
-const ENTRY_PREFIX = 'entry:';
-const PREFERENCES_KEY = 'preferences';
+export async function loadAllEntries(userId: string): Promise<JournalEntry[]> {
+  const { data, error } = await supabase
+    .from('journal_entries')
+    .select('id, title, body, mood, created_at, updated_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
 
-// Fallback: in-memory store for environments without window.storage
-const memStore = new Map<string, string>();
+  if (error) throw error;
 
-async function storageSet(key: string, value: string): Promise<void> {
-  if (window.storage) {
-    await window.storage.set(key, value);
-  } else {
-    memStore.set(key, value);
-  }
-}
-
-async function storageGet(key: string): Promise<{ value: string } | null> {
-  if (window.storage) {
-    return window.storage.get(key);
-  }
-  const val = memStore.get(key);
-  return val != null ? { value: val } : null;
-}
-
-async function storageList(prefix: string): Promise<{ keys: string[] }> {
-  if (window.storage) {
-    return window.storage.list(prefix);
-  }
-  const keys = Array.from(memStore.keys()).filter((k) => k.startsWith(prefix));
-  return { keys };
-}
-
-async function storageDelete(key: string): Promise<void> {
-  if (window.storage) {
-    await window.storage.delete(key);
-  } else {
-    memStore.delete(key);
-  }
-}
-
-export async function saveEntry(entry: JournalEntry): Promise<void> {
-  await storageSet(`${ENTRY_PREFIX}${entry.id}`, JSON.stringify(entry));
-}
-
-export async function loadAllEntries(): Promise<JournalEntry[]> {
-  const { keys } = await storageList(ENTRY_PREFIX);
-  const entries = await Promise.all(
-    keys.map(async (key) => {
-      try {
-        const result = await storageGet(key);
-        return result ? (JSON.parse(result.value) as JournalEntry) : null;
-      } catch {
-        return null;
-      }
-    }),
-  );
-  return (entries.filter(Boolean) as JournalEntry[]).sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  );
+  return (data ?? []).map((row) => ({
+    id: row.id as string,
+    title: row.title as string,
+    body: (row.body ?? '') as string,
+    mood: (row.mood ?? 'calm') as JournalEntry['mood'],
+    createdAt: row.created_at as string,
+    updatedAt: row.updated_at as string,
+  }));
 }
 
 export async function deleteEntry(id: string): Promise<void> {
-  await storageDelete(`${ENTRY_PREFIX}${id}`);
+  const { error } = await supabase
+    .from('journal_entries')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
 }
 
+// ─── Preferences (localStorage) ──────────────────────────────────────────────
+
 export async function savePreferences(prefs: UserPreferences): Promise<void> {
-  await storageSet(PREFERENCES_KEY, JSON.stringify(prefs));
+  try {
+    localStorage.setItem(PREFERENCES_KEY, JSON.stringify(prefs));
+  } catch {
+    // non-critical
+  }
 }
 
 export async function loadPreferences(): Promise<UserPreferences | null> {
   try {
-    const result = await storageGet(PREFERENCES_KEY);
-    return result ? (JSON.parse(result.value) as UserPreferences) : null;
+    const raw = localStorage.getItem(PREFERENCES_KEY);
+    return raw ? (JSON.parse(raw) as UserPreferences) : null;
   } catch {
     return null;
   }

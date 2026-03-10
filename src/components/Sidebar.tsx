@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BookOpen, Plus, Menu, X } from 'lucide-react';
+import { BookOpen, Plus, Menu, X, LogOut } from 'lucide-react';
 import type { JournalEntry, Mood } from '../types';
 import { EntryListItem } from './EntryListItem';
 import { SearchInput } from './SearchInput';
@@ -15,11 +15,13 @@ interface SidebarProps {
   searchQuery: string;
   moodFilter: Mood | null;
   theme: 'light' | 'dark';
+  userEmail: string;
   onNewEntry: () => void;
   onSelectEntry: (id: string) => void;
   onSearch: (q: string) => void;
   onMoodFilter: (mood: Mood | null) => void;
   onThemeToggle: () => void;
+  onLogout: () => void;
   onExportSuccess: () => void;
 }
 
@@ -30,11 +32,13 @@ export function Sidebar({
   searchQuery,
   moodFilter,
   theme,
+  userEmail,
   onNewEntry,
   onSelectEntry,
   onSearch,
   onMoodFilter,
   onThemeToggle,
+  onLogout,
   onExportSuccess,
 }: SidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -72,6 +76,7 @@ export function Sidebar({
 
       {/* New Entry Button */}
       <button
+        data-testid="new-entry-button"
         onClick={() => {
           onNewEntry();
           setMobileOpen(false);
@@ -130,6 +135,7 @@ export function Sidebar({
 
       {/* Entry list */}
       <div
+        data-testid="entry-list"
         style={{
           flex: 1,
           overflowY: 'auto',
@@ -171,17 +177,67 @@ export function Sidebar({
           marginTop: 'auto',
           paddingTop: '16px',
           borderTop: '1px solid var(--border)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
         }}
       >
-        <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-          {entries.length} total
-        </span>
-        <div style={{ display: 'flex', gap: '4px' }}>
-          <ExportButton entries={entries} onSuccess={onExportSuccess} />
-          <ThemeToggle theme={theme} onToggle={onThemeToggle} />
+        {/* User info row */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            marginBottom: '8px',
+          }}
+        >
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <span
+              data-testid="sidebar-user-email"
+              style={{
+                fontFamily: "'Inter', system-ui, sans-serif",
+                fontSize: '13px',
+                color: 'var(--text-secondary)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                display: 'block',
+                maxWidth: '180px',
+              }}
+            >
+              {userEmail}
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+            <ExportButton entries={entries} onSuccess={onExportSuccess} />
+            <ThemeToggle theme={theme} onToggle={onThemeToggle} />
+            <button
+              data-testid="logout-button"
+              onClick={onLogout}
+              title="Log out"
+              aria-label="Log out"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--text-muted)',
+                width: '36px',
+                height: '36px',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 150ms ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'var(--bg-surface-alt)';
+                e.currentTarget.style.color = '#B91C1C';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.color = 'var(--text-muted)';
+              }}
+            >
+              <LogOut size={18} />
+            </button>
+          </div>
         </div>
       </div>
     </div>

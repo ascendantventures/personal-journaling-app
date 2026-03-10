@@ -109,6 +109,7 @@ export function Editor({ entry, onSave, onCancel, onUnsavedChange }: EditorProps
       {/* Title */}
       <div style={{ marginBottom: '24px' }}>
         <input
+          data-testid="entry-title"
           ref={titleRef}
           type="text"
           value={title}
@@ -177,6 +178,7 @@ export function Editor({ entry, onSave, onCancel, onUnsavedChange }: EditorProps
           <EditorToggle mode={editorMode} onChange={setEditorMode} />
         </div>
         <textarea
+          data-testid="entry-body"
           ref={textareaRef}
           value={body}
           onChange={(e) => handleBodyChange(e.target.value)}
@@ -240,6 +242,7 @@ export function Editor({ entry, onSave, onCancel, onUnsavedChange }: EditorProps
           Cancel
         </button>
         <button
+          data-testid="save-entry"
           onClick={handleSave}
           style={{
             padding: '11px 22px',

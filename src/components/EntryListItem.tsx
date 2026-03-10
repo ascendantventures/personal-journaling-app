@@ -25,6 +25,7 @@ function formatDate(iso: string): string {
 export function EntryListItem({ entry, isActive, onClick, index }: EntryListItemProps) {
   return (
     <div
+      data-testid="entry-item"
       role="button"
       tabIndex={0}
       onClick={onClick}

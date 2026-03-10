@@ -150,6 +150,7 @@ export function EntryView({ entry, onEdit, onDelete }: EntryViewProps) {
           Edit
         </button>
         <button
+          data-testid="delete-entry"
           onClick={onDelete}
           aria-label="Delete this entry"
           style={{

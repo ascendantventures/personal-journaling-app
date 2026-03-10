@@ -1,6 +1,7 @@
-import React, { useReducer, useEffect, useMemo, useCallback } from 'react';
+import React, { useReducer, useEffect, useMemo, useCallback, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { AppState, AppAction, JournalEntry, Mood } from './types';
+import type { User } from './lib/auth';
 import { Sidebar } from './components/Sidebar';
 import { Editor } from './components/Editor';
 import { EntryView } from './components/EntryView';
@@ -8,6 +9,8 @@ import { CalendarHeatMap } from './components/CalendarHeatMap';
 import { EmptyState } from './components/EmptyState';
 import { Toast } from './components/Toast';
 import { ConfirmDialog } from './components/ConfirmDialog';
+import { LoginForm } from './components/auth/LoginForm';
+import { SignupForm } from './components/auth/SignupForm';
 import { Calendar } from 'lucide-react';
 import {
   saveEntry,
@@ -16,6 +19,7 @@ import {
   savePreferences,
   loadPreferences,
 } from './lib/storage';
+import { onAuthStateChange, signOut as authSignOut } from './lib/auth';
 
 // ─── Reducer ──────────────────────────────────────────────────────────────────
 
@@ -109,12 +113,25 @@ function reducer(state: AppState, action: AppAction): AppState {
 
 export default function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const [user, setUser] = useState<User | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [authView, setAuthView] = useState<'login' | 'signup'>('login');
 
-  // Hydrate from storage on mount
+  // Listen for auth state changes
   useEffect(() => {
+    const { data: { subscription } } = onAuthStateChange((u) => {
+      setUser(u);
+      setAuthChecked(true);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Hydrate from storage on mount (only when authenticated)
+  useEffect(() => {
+    if (!user) return;
     async function init() {
       try {
-        const [entries, prefs] = await Promise.all([loadAllEntries(), loadPreferences()]);
+        const [entries, prefs] = await Promise.all([loadAllEntries(user!.id), loadPreferences()]);
         dispatch({ type: 'LOAD_ENTRIES', entries });
 
         // Theme: prefs > prefers-color-scheme
@@ -134,7 +151,7 @@ export default function App() {
       }
     }
     init();
-  }, []);
+  }, [user]);
 
   // Apply theme to <html>
   useEffect(() => {
@@ -217,12 +234,13 @@ export default function App() {
 
   const handleSave = useCallback(
     async (data: { title: string; body: string; mood: Mood }) => {
+      if (!user) return;
       const now = new Date().toISOString();
       try {
         if (activeEntry) {
           // Update
           const updated: JournalEntry = { ...activeEntry, ...data, updatedAt: now };
-          await saveEntry(updated);
+          await saveEntry(updated, user.id);
           dispatch({ type: 'UPDATE_ENTRY', entry: updated });
           dispatch({ type: 'SHOW_TOAST', message: 'Entry updated.', toastType: 'success' });
         } else {
@@ -233,7 +251,7 @@ export default function App() {
             createdAt: now,
             updatedAt: now,
           };
-          await saveEntry(newEntry);
+          await saveEntry(newEntry, user.id);
           dispatch({ type: 'ADD_ENTRY', entry: newEntry });
           dispatch({ type: 'SHOW_TOAST', message: 'Entry saved.', toastType: 'success' });
         }
@@ -245,7 +263,7 @@ export default function App() {
         });
       }
     },
-    [activeEntry],
+    [activeEntry, user],
   );
 
   const handleEdit = useCallback(() => {
@@ -299,6 +317,12 @@ export default function App() {
       },
     });
   }, [activeEntry]);
+
+  const handleLogout = useCallback(async () => {
+    await authSignOut();
+    dispatch({ type: 'LOAD_ENTRIES', entries: [] });
+    dispatch({ type: 'SET_ACTIVE_ENTRY', id: null });
+  }, []);
 
   const handleThemeToggle = useCallback(async () => {
     const newTheme = state.theme === 'light' ? 'dark' : 'light';
@@ -382,6 +406,24 @@ export default function App() {
     return <EmptyState type="select-entry" />;
   }
 
+  // Show loading spinner while auth state is being determined
+  if (!authChecked) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#FAF8F5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: '40px', height: '40px', border: '3px solid #E7E5E4', borderTopColor: '#C2410C', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  // Show auth screens when not logged in
+  if (!user) {
+    if (authView === 'signup') {
+      return <SignupForm onSwitchToLogin={() => setAuthView('login')} />;
+    }
+    return <LoginForm onSwitchToSignup={() => setAuthView('signup')} />;
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>
       <Sidebar
@@ -391,11 +433,13 @@ export default function App() {
         searchQuery={state.searchQuery}
         moodFilter={state.moodFilter}
         theme={state.theme}
+        userEmail={user.email ?? ''}
         onNewEntry={handleNewEntry}
         onSelectEntry={handleSelectEntry}
         onSearch={(q) => dispatch({ type: 'SET_SEARCH', query: q })}
         onMoodFilter={(mood) => dispatch({ type: 'SET_MOOD_FILTER', mood })}
         onThemeToggle={handleThemeToggle}
+        onLogout={handleLogout}
         onExportSuccess={() =>
           dispatch({ type: 'SHOW_TOAST', message: 'Journal exported.', toastType: 'success' })
         }
