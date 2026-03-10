@@ -2,6 +2,7 @@ import React from 'react';
 import { Edit2, Trash2 } from 'lucide-react';
 import type { JournalEntry } from '../types';
 import { MoodBadge } from './MoodBadge';
+import { MarkdownRenderer } from './MarkdownRenderer';
 
 interface EntryViewProps {
   entry: JournalEntry;
@@ -100,18 +101,8 @@ export function EntryView({ entry, onEdit, onDelete }: EntryViewProps) {
 
       {/* Body */}
       {entry.body ? (
-        <div
-          style={{
-            fontSize: '18px',
-            lineHeight: 1.8,
-            color: 'var(--text-primary)',
-            fontFamily: "'DM Sans', sans-serif",
-            whiteSpace: 'pre-wrap' as const,
-            wordBreak: 'break-word' as const,
-            marginBottom: '40px',
-          }}
-        >
-          {entry.body}
+        <div style={{ marginBottom: '40px' }}>
+          <MarkdownRenderer content={entry.body} bare />
         </div>
       ) : (
         <p

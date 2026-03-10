@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Save, X } from 'lucide-react';
 import type { JournalEntry, Mood } from '../types';
 import { MoodSelector } from './MoodSelector';
+import { EditorToggle } from './EditorToggle';
+import { MarkdownRenderer } from './MarkdownRenderer';
 
 interface EditorProps {
   entry: Partial<JournalEntry> | null;
@@ -14,6 +16,7 @@ export function Editor({ entry, onSave, onCancel, onUnsavedChange }: EditorProps
   const [title, setTitle] = useState(entry?.title ?? '');
   const [body, setBody] = useState(entry?.body ?? '');
   const [mood, setMood] = useState<Mood | null>(entry?.mood ?? null);
+  const [editorMode, setEditorMode] = useState<'edit' | 'preview'>('edit');
   const [errors, setErrors] = useState<{ title?: string; mood?: string }>({});
   const titleRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -152,26 +155,37 @@ export function Editor({ entry, onSave, onCancel, onUnsavedChange }: EditorProps
 
       {/* Body */}
       <div style={{ marginBottom: '32px' }}>
-        <label
+        <div
           style={{
-            display: 'block',
-            fontSize: '14px',
-            fontWeight: 500,
-            color: 'var(--text-secondary)',
-            marginBottom: '8px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '12px',
+            flexWrap: 'wrap' as const,
+            gap: '8px',
           }}
         >
-          What's on your mind?
-        </label>
+          <label
+            style={{
+              fontSize: '14px',
+              fontWeight: 500,
+              color: 'var(--text-secondary)',
+            }}
+          >
+            What's on your mind?
+          </label>
+          <EditorToggle mode={editorMode} onChange={setEditorMode} />
+        </div>
         <textarea
           ref={textareaRef}
           value={body}
           onChange={(e) => handleBodyChange(e.target.value)}
-          placeholder="Write freely here. This is your space…"
+          placeholder="Write freely here. Markdown supported…"
           aria-label="Journal entry body"
           style={{
+            display: editorMode === 'edit' ? 'block' : 'none',
             width: '100%',
-            minHeight: '200px',
+            minHeight: '300px',
             background: 'var(--bg-surface-alt)',
             border: '1px solid var(--border)',
             borderRadius: '8px',
@@ -196,6 +210,9 @@ export function Editor({ entry, onSave, onCancel, onUnsavedChange }: EditorProps
             e.target.style.background = 'var(--bg-surface-alt)';
           }}
         />
+        {editorMode === 'preview' && (
+          <MarkdownRenderer content={body} minHeight="300px" />
+        )}
       </div>
 
       {/* Actions */}
